@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Трекер ОГЭ — практико-ориентированные задачи</title>
+<style>
+  :root {
+    --bg: #f6efe6;          /* светло-коричневый фон листа */
+    --surface: #fffdf9;     /* почти белый, тёплый */
+    --fg: #111;
+    --line-soft: #d4d4d4;
+    --muted: #6b6b6b;
+    --row-alt: #efe5d8;     /* полоса строки на бежевом */
+    --s0: #fffdf9;
+    --s1: #ffd400;          /* яркий жёлтый */
+    --s2: #00c853;          /* яркий зелёный */
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    margin: 0;
+    text-transform: uppercase;
+  }
+
+  /* settings button */
+  .settings-wrap { position: relative; }
+  .settings-btn {
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    width: 38px;
+    height: 38px;
+    background: var(--surface);
+    color: #111;
+    border: 1.5px solid #111;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .settings-btn:hover { background: #111; color: #fff; }
+
+  /* settings panel */
+  .settings-panel {
+    position: absolute;
+    right: 0;
+    top: 46px;
+    width: 360px;
+    background: var(--surface);
+    border: 1.5px solid #111;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    z-index: 40;
+    display: none;
+  }
+  .settings-panel.open { display: block; }
+  .settings-panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 0 0 12px;
+    color: var(--muted);
+  }
+  .settings-panel .action { margin-bottom: 14px; }
+  .settings-panel .action button {
+    font: inherit;
+    font-size: 13px;
+    padding: 8px 14px;
+    background: var(--surface);
+    color: #111;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+  }
+  .settings-panel .action button:hover { background: #111; color: #fff; }
+  .settings-panel .action .hint {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin-top: 6px;
+  }
+  .settings-panel .divider {
+    border-top: 1px solid var(--line-soft);
+    margin: 14px 0;
+  }
+  .settings-panel details { font-size: 12.5px; color: #222; }
+  .settings-panel details summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+    outline: none;
+  }
+  .settings-panel details ol {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    line-height: 1.5;
+  }
+  .settings-panel details li { margin-bottom: 4px; }
+  .settings-panel details code {
+    background: #f2f2f2;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11.5px;
+  }
+  .settings-panel .note-small {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.45;
+    margin-top: 10px;
+  }
+
+  /* legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+  .legend .sw {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 1.5px solid #111;
+    border-radius: 3px;
+    vertical-align: -2px;
+    margin-right: 5px;
+  }
+  .legend .sw.s1 { background: var(--s1); }
+  .legend .sw.s2 { background: var(--s2); border-color: #1e7e46; }
+  .legend .hint { margin-left: auto; }
+
+  /* table */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1.5px solid #111;
+    border-radius: 6px;
+    background: var(--surface);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 980px;
+  }
+  th, td {
+    border: 1px solid var(--line-soft);
+    padding: 0;
+    text-align: center;
+    font-size: 13px;
+  }
+  thead th {
+    background: #f7f7f7;
+    font-weight: 600;
+    padding: 8px 6px;
+    font-size: 12px;
+    line-height: 1.25;
+    vertical-align: bottom;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  thead th.group {
+    background: #111;
+    color: #fff;
+    font-size: 11.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 8px 6px;
+  }
+  thead th.group .edit {
+    background: transparent;
+    color: #fff;
+    border: 1px dashed rgba(255,255,255,.5);
+    border-radius: 3px;
+    font: inherit;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    width: 100%;
+    text-align: center;
+    padding: 2px 4px;
+  }
+  thead th.group .edit:focus { outline: none; border-color: #fff; }
+  th.num, td.num {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 11.5px;
+    background: #fafafa;
+  }
+
+  /* name column */
+  .name-col { min-width: 150px; }
+  thead th.name-col { text-align: left; padding-left: 12px; }
+  td.name-col {
+    text-align: left;
+    padding: 0 4px 0 10px;
+    border-right: 1.5px solid #111;
+    background: var(--surface);
+  }
+  td.name-col input {
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 13.5px;
+    width: 100%;
+    padding: 9px 0;
+    color: #111;
+  }
+  td.name-col input:focus {
+    outline: 2px solid #111;
+    outline-offset: -2px;
+    background: #fff8e6;
+  }
+
+  /* cells */
+  .cell {
+    width: 46px;
+    height: 40px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background .12s;
+    background: var(--s0);
+  }
+  .cell.s1 { background: var(--s1); }
+  .cell.s2 { background: var(--s2); }
+  .cell .date {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: rgba(0,0,0,.75);
+    pointer-events: none;
+  }
+  .cell.s2 .date { color: #fff; }
+  .cell .note-dot {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #111;
+    display: none;
+  }
+  .cell.has-note .note-dot { display: block; }
+  .cell.s2 .note-dot { background: #fff; }
+
+  /* row striping */
+  tbody tr:nth-child(even) td.name-col,
+  tbody tr:nth-child(even) td.cell.s0 {
+    background: var(--row-alt);
+  }
+  tbody tr:nth-child(even) td.name-col input {
+    /* прозрачный фон, чтобы полоса была видна */
+    background: transparent;
+  }
+  tbody tr:nth-child(even) td.name-col input:focus {
+    background: #fff8e6;
+  }
+
+  /* delete col */
+  td.del { width: 38px; border-left: 1.5px solid #111; background: var(--surface); }
+  td.del button {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    padding: 4px 8px;
+    color: #111;
+    cursor: pointer;
+  }
+  td.del button:hover { background: #111; color: #fff; }
+
+  /* add student */
+  .add-student { margin-top: 12px; }
+  .add-student button {
+    font: inherit;
+    font-size: 13px;
+    padding: 8px 16px;
+    background: var(--surface);
+    color: #111;
+    border: 1.5px solid #111;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .add-student button:hover { background: #111; color: #fff; }
+
+  /* note popover */
+  .note-pop {
+    position: fixed;
+    z-index: 50;
+    background: var(--surface);
+    border: 1.5px solid #111;
+    border-radius: 6px;
+    padding: 10px;
+    width: 240px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.15);
+    display: none;
+  }
+  .note-pop.open { display: block; }
+  .note-pop label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .note-pop textarea {
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    border: 1px solid #111;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 13px;
+    color: #111;
+    background: #fff;
+  }
+  .note-pop textarea:focus { outline: 2px solid #111; outline-offset: 1px; }
+  .note-pop .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .note-pop .actions button { padding: 5px 10px; font-size: 12px; }
+
+  @media print {
+    body { padding: 0; background: #fff; }
+    .topbar .settings-wrap, .legend .hint, .note-pop, .add-student { display: none !important; }
+    .table-wrap { border: 1px solid #000; background: #fff; }
+    thead th { position: static; }
+    .cell { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    td.del, th.del { display: none; }
+    tbody tr:nth-child(even) td.name-col,
+    tbody tr:nth-child(even) td.cell.s0 { background: var(--row-alt) !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Трекер ОГЭ · практико-ориентированные задачи</h1>
+
+  <div class="settings-wrap">
+    <button class="settings-btn" id="settingsBtn" title="Настройки и перенос">⋯</button>
+
+    <div class="settings-panel" id="settingsPanel">
+      <h2>Перенос и резервная копия</h2>
+
+      <div class="action">
+        <button id="saveCopyBtn">Сохранить копию на компьютер</button>
+        <div class="hint">Скачает один файл со всеми учениками, цветами и заметками. Делайте это перед переносом на другой компьютер или на всякий случай.</div>
+      </div>
+
+      <div class="action">
+        <button id="loadCopyBtn">Загрузить копию с компьютера</button>
+        <div class="hint">Выберите файл, сохранённый ранее. Таблица заполнится данными из него. <b>Внимание:</b> текущие данные заменятся.</div>
+        <input type="file" id="loadCopyFile" accept=".json" hidden>
+      </div>
+
+      <div class="divider"></div>
+
+      <details>
+        <summary>Как перенести на другой компьютер</summary>
+        <ol>
+          <li>Здесь нажмите «Сохранить копию на компьютер» — файл скачается в папку «Загрузки».</li>
+          <li>Перенесите на другой компьютер <b>этот файл</b> и <b>сам трекер</b> (файл <code>tracker.html</code>) — на флешке, почтой или через облако.</li>
+          <li>На другом компьютере откройте <code>tracker.html</code>, нажмите «⋯» → «Загрузить копию с компьютера» и выберите файл.</li>
+          <li>Готово — таблица с вашими учениками на новом месте.</li>
+        </ol>
+      </details>
+
+      <div class="note-small">
+        Данные хранятся в этом браузере на этом компьютере. Если почистить кэш браузера или зайти с другого устройства — таблица будет пустой, пока вы не загрузите копию.
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="action danger">
+        <button id="clearAllBtn">Начать заново</button>
+        <div class="hint">Очистит таблицу полностью. Используйте, только если уверены.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <span><span class="sw"></span>не начато</span>
+  <span><span class="sw s1"></span>в работе</span>
+  <span><span class="sw s2"></span>пройдено</span>
+  <span class="hint">клик — сменить статус · двойной клик — заметка · дата ставится автоматически</span>
+</div>
+
+<div class="table-wrap">
+  <table id="tracker"></table>
+</div>
+
+<div class="add-student">
+  <button id="addStudent">+ ученик</button>
+</div>
+
+<div class="note-pop" id="notePop">
+  <label>Заметка к заданию</label>
+  <textarea id="noteText" placeholder="например: ошибка в №7, разобрать"></textarea>
+  <div class="actions">
+    <button id="noteCancel">Отмена</button>
+    <button id="noteSave">Сохранить</button>
+  </div>
+</div>
+
+<script>
+/* ---------- config ---------- */
+const STORAGE_KEY = 'oge_practice_tracker_v1';
+
+const DEFAULT_TOPICS = [
+  'Участок',
+  'Квартира',
+  'Листы бумаги',
+  'Печь для бани',
+  'Тарифы',
+  'Шины',
+  'План местности',
+  'Своя тема'
+];
+const TASKS_PER_TOPIC = 5;
+
+/* ---------- state ---------- */
+let state = loadState();
+
+function defaultState() {
+  return { topics: DEFAULT_TOPICS.slice(), students: ['Ученик 1'], cells: {} };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && Array.isArray(s.topics) && Array.isArray(s.students) && s.cells) return s;
+    }
+  } catch (e) {}
+  return defaultState();
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+/* ---------- helpers ---------- */
+function todayISO() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function fmtShort(iso) {
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  return `${d}.${m}`;
+}
+function cellKey(si, ti, ki) { return `${si}|${ti}|${ki}`; }
+function getCell(si, ti, ki) {
+  return state.cells[cellKey(si, ti, ki)] || { status: 0, date: '', note: '' };
+}
+function setCell(si, ti, ki, data) { state.cells[cellKey(si, ti, ki)] = data; }
+function escapeAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+/* ---------- render ---------- */
+const table = document.getElementById('tracker');
+
+function render() {
+  const topics = state.topics;
+  const cols = TASKS_PER_TOPIC;
+
+  let h1 = '<thead><tr>';
+  h1 += '<th class="name-col" rowspan="2">Ученик</th>';
+  topics.forEach((t, ti) => {
+    h1 += `<th class="group" colspan="${cols}">`;
+    h1 += `<input class="edit" data-topic="${ti}" value="${escapeAttr(t)}" title="Редактировать название темы">`;
+    h1 += `</th>`;
+  });
+  h1 += '<th class="del" rowspan="2"></th>';
+  h1 += '</tr>';
+
+  let h2 = '<tr>';
+  topics.forEach(() => {
+    for (let k = 1; k <= cols; k++) h2 += `<th class="num">${k}</th>`;
+  });
+  h2 += '</tr></thead>';
+
+  let body = '<tbody>';
+  state.students.forEach((name, si) => {
+    body += '<tr>';
+    body += `<td class="name-col"><input data-student="${si}" value="${escapeAttr(name)}" title="Имя ученика"></td>`;
+    topics.forEach((_, ti) => {
+      for (let k = 1; k <= cols; k++) {
+        const c = getCell(si, ti, k);
+        const cls = ['cell', `s${c.status}`];
+        if (c.note) cls.push('has-note');
+        const title = [state.topics[ti] + ' · задание ' + k, c.note ? 'заметка: ' + c.note : ''].filter(Boolean).join('\n');
+        body += `<td class="${cls.join(' ')}" data-si="${si}" data-ti="${ti}" data-ki="${k}" title="${escapeAttr(title)}">`;
+        body += `<span class="date">${fmtShort(c.date)}</span><span class="note-dot"></span>`;
+        body += `</td>`;
+      }
+    });
+    body += `<td class="del"><button data-del-student="${si}" title="Удалить ученика">✕</button></td>`;
+    body += '</tr>';
+  });
+  body += '</tbody>';
+
+  table.innerHTML = h1 + h2 + body;
+  bindEvents();
+}
+
+/* ---------- events ---------- */
+function bindEvents() {
+  table.querySelectorAll('input.edit').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const ti = +e.target.dataset.topic;
+      state.topics[ti] = e.target.value.trim() || `Тема ${ti+1}`;
+      saveState(); render();
+    });
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+
+  table.querySelectorAll('input[data-student]').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const si = +e.target.dataset.student;
+      state.students[si] = e.target.value.trim() || 'Без имени';
+      saveState(); render();
+    });
+  });
+
+  table.querySelectorAll('button[data-del-student]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const si = +e.target.dataset.delStudent;
+      if (!confirm('Удалить ученика и все его отметки?')) return;
+      state.students.splice(si, 1);
+      const newCells = {};
+      Object.entries(state.cells).forEach(([k, v]) => {
+        const [s, ti, ki] = k.split('|').map(Number);
+        if (s < si) newCells[`${s}|${ti}|${ki}`] = v;
+        else if (s > si) newCells[`${s-1}|${ti}|${ki}`] = v;
+      });
+      state.cells = newCells;
+      saveState(); render();
+    });
+  });
+
+  table.querySelectorAll('td.cell').forEach(td => {
+    td.addEventListener('click', () => {
+      const si = +td.dataset.si, ti = +td.dataset.ti, ki = +td.dataset.ki;
+      const c = getCell(si, ti, ki);
+      c.status = (c.status + 1) % 3;
+      if (c.status !== 0) c.date = todayISO();
+      setCell(si, ti, ki, c);
+      saveState(); render();
+    });
+    td.addEventListener('dblclick', e => { e.preventDefault(); openNote(td); });
+  });
+}
+
+/* ---------- note popover ---------- */
+const notePop = document.getElementById('notePop');
+const noteText = document.getElementById('noteText');
+let noteTarget = null;
+
+function openNote(td) {
+  const si = +td.dataset.si, ti = +td.dataset.ti, ki = +td.dataset.ki;
+  noteTarget = { si, ti, ki };
+  noteText.value = getCell(si, ti, ki).note || '';
+  const rect = td.getBoundingClientRect();
+  const popW = 240, popH = 160;
+  let left = rect.left, top = rect.bottom + 6;
+  if (left + popW > window.innerWidth - 12) left = window.innerWidth - popW - 12;
+  if (top + popH > window.innerHeight - 12) top = rect.top - popH - 6;
+  notePop.style.left = Math.max(12, left) + 'px';
+  notePop.style.top = Math.max(12, top) + 'px';
+  notePop.classList.add('open');
+  noteText.focus();
+}
+function closeNote() { notePop.classList.remove('open'); noteTarget = null; }
+
+document.getElementById('noteCancel').addEventListener('click', closeNote);
+document.getElementById('noteSave').addEventListener('click', () => {
+  if (!noteTarget) return;
+  const { si, ti, ki } = noteTarget;
+  const c = getCell(si, ti, ki);
+  c.note = noteText.value.trim();
+  setCell(si, ti, ki, c);
+  saveState(); closeNote(); render();
+});
+document.addEventListener('mousedown', e => {
+  if (!notePop.classList.contains('open')) return;
+  if (notePop.contains(e.target) || e.target.closest('td.cell')) return;
+  closeNote();
+});
+
+/* ---------- settings ---------- */
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+
+settingsBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  settingsPanel.classList.toggle('open');
+});
+document.addEventListener('mousedown', e => {
+  if (!settingsPanel.classList.contains('open')) return;
+  if (settingsPanel.contains(e.target) || e.target === settingsBtn) return;
+  settingsPanel.classList.remove('open');
+});
+
+/* save copy */
+document.getElementById('saveCopyBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  a.download = `Трекер ОГЭ — копия ${stamp}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* load copy */
+const loadCopyFile = document.getElementById('loadCopyFile');
+document.getElementById('loadCopyBtn').addEventListener('click', () => loadCopyFile.click());
+loadCopyFile.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!confirm('Текущие данные будут заменены данными из файла. Продолжить?')) { e.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data || !Array.isArray(data.topics) || !Array.isArray(data.students) || !data.cells) {
+        throw new Error('это не файл трекера');
+      }
+      state = data; saveState(); render();
+      settingsPanel.classList.remove('open');
+    } catch (err) {
+      alert('Не удалось загрузить файл: ' + err.message);
+    } finally { e.target.value = ''; }
+  };
+  reader.readAsText(file);
+});
+
+/* clear */
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (!confirm('Очистить таблицу полностью? Это действие нельзя отменить.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = defaultState(); saveState(); render();
+  settingsPanel.classList.remove('open');
+});
+
+/* add student — с автофокусом и выделением текста */
+document.getElementById('addStudent').addEventListener('click', () => {
+  state.students.push('Новый ученик');
+  const newIndex = state.students.length - 1;
+  saveState();
+  render();
+
+  // после перерисовки находим поле нового ученика, фокусируем и выделяем текст
+  requestAnimationFrame(() => {
+    const inp = table.querySelector(`input[data-student="${newIndex}"]`);
+    if (!inp) return;
+    inp.focus();
+    inp.select();
+    // прокрутить к строке, если она ниже видимой области
+    inp.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+});
+
+/* init */
+render();
+</script>
+<a href="https://vk.ru/country_tutor" style="position:fixed;bottom:12px;right:12px;font-size:13px;color:#555;text-decoration:none;opacity:1;">https://vk.ru/country_tutor</a>
+</body>
+</html>
